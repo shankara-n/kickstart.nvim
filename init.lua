@@ -171,6 +171,7 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set("n", "<A-j>", ":m .+1<CR>") -- Move line down with Alt+j
 vim.keymap.set("n", "<A-k>", ":m .-2<CR>") -- Move line up with Alt+k
 
+vim.keymap.set("i", "jj", "<ESC>", { silent = true })
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -185,6 +186,13 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
+
+-- In insert mode: Ctrl+Delete to delete a word
+vim.keymap.set("i", "<C-Del>", "<C-o>dw")
+-- SS to save file without quitting
+vim.keymap.set("n", "SS", ":update<CR>")
+
+vim.keymap.set("n", "<Esc>p", "<Nop>")
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
 --
@@ -207,7 +215,15 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank()
   end,
 })
-
+-- Trigger autoread when files change on disk
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+  pattern = "*",
+  callback = function()
+    if vim.fn.mode() ~= "c" and vim.fn.mode():sub(1,1) ~= "r" and vim.fn.mode() ~= "!" and vim.fn.mode() ~= "t" and vim.fn.getcmdwintype() == '' then  -- Corrected condition
+      vim.cmd("checktime") -- Execute checktime as Vimscript command 
+    end -- add end keyword to close if statement
+  end,
+})
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -231,7 +247,7 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-
+  'mfussenegger/nvim-jdtls',
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -242,7 +258,7 @@ require('lazy').setup({
   --    require('Comment').setup({})
 
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  -- { 'numToStr/Comment.nvim', opts = {} },
 
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
@@ -357,12 +373,29 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
+        defaults = {
+          file_ignore_patterns = {"build/", "env", "node_modules", "release-info", "package-lock.json"},
+          find_command = {'fd', '--type', 'f', '-E', 'build/', '-E', 'env', '-E', 'release-info'},
+          dynamic_preview_title = true,
+          path_display = {
+            shorten = {
+              len = 3, exclude = {1, -1}
+            },
+            truncate = true,
+          }
+        },
         --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' }
         --   },
+        -- -- },
+        -- pickers = {
+            -- find_files ={
+            --     find_command = {'fd', '--type', 'f', '-E', 'build', '-E', 'env', '-E', 'release-info'},
+            -- },
+            -- live_grep = {
+            --
+            -- }
         -- },
-        -- pickers = {}
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -579,9 +612,9 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        -- tsserver = {},
-        --
-
+        tsserver = {},
+        -- java_language_server = {},
+        jdtls = {},
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -597,7 +630,7 @@ require('lazy').setup({
           },
         },
       }
-
+      log_level = vim.log.levels.DEBUG
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
       --  other tools, you can run
@@ -613,16 +646,53 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
       require('mason-lspconfig').setup {
+        -- handlers = {
+        --   function(server_name)
+        --     local server = servers[server_name] or {}
+        --     -- This handles overriding only values explicitly passed
+        --     -- by the server configuration above. Useful when disabling
+        --     -- certain features of an LSP (for example, turning off formatting for tsserver)
+        --     server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        --     require('lspconfig')[server_name].setup(server)
+        --   end,
+        -- },
         handlers = {
           function(server_name)
+            if not server_name then
+              return
+            end
             local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for tsserver)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
+          end,
+          jdtls = function()
+            require("lspconfig").jdtls.setup({
+              on_attach = function()
+                local bemol_dir = vim.fs.find({ ".bemol" }, { upward = true, type = "directory" })[1]
+                local ws_folders_lsp = {}
+                if bemol_dir then
+                  local file = io.open(bemol_dir .. "/ws_root_folders", "r")
+                  if file then
+                    for line in file:lines() do
+                      table.insert(ws_folders_lsp, line)
+                    end
+                    file:close()
+                  end
+                end
+                if ws_folders_lsp then
+                  for _, line in ipairs(ws_folders_lsp) do
+                    vim.lsp.buf.add_workspace_folder(line)
+                  end
+                end
+              end,
+              cmd = {
+                "jdtls",
+                "--jvm-arg=-javaagent:" .. require("mason-registry")
+                  .get_package("jdtls")
+                  :get_install_path() .. "/lombok.jar",
+              },
+            })
           end,
         },
       }
@@ -733,7 +803,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<CR>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -878,10 +948,10 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
