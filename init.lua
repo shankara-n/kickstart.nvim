@@ -196,7 +196,25 @@ vim.keymap.set("i", "jj", "<ESC>", { silent = true })
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- TIP: Disable arrow keys in normal mode
+-- open terminal shortcuts
+local function open_terminal_split(split_cmd)
+  vim.cmd(split_cmd)
+  vim.cmd('terminal')
+  vim.cmd('startinsert')
+end
+
+-- Key mapping for vertical terminal split
+vim.keymap.set('n', '<leader>vt', function()
+  open_terminal_split('vsplit')
+end, { noremap = true, silent = true })
+
+-- Key mapping for horizontal terminal split
+vim.keymap.set('n', '<leader>ht', function()
+  open_terminal_split('split')
+end, { noremap = true, silent = true })
+
+
+-- -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
@@ -267,6 +285,7 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'mfussenegger/nvim-jdtls',
   'APZelos/blamer.nvim',
+  'pocco81/autosave.nvim',
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
