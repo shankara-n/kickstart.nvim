@@ -161,7 +161,11 @@ vim.opt.expandtab = true
 -- vim.opt.smartindent = true
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
-
+-- Keybindings to cycle through buffers
+-- Map <Tab> to go to the next buffer
+vim.keymap.set('n', '<Tab>', ':bnext<CR>', { noremap = true, silent = true })
+-- Map <Shift-Tab> to go to the previous buffer
+vim.keymap.set('n', '<S-Tab>', ':bprevious<CR>', { noremap = true, silent = true })
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.keymap.set('n', '<C-h>', function()
   vim.cmd(':%s/')
