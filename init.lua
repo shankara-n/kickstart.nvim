@@ -168,6 +168,30 @@ vim.opt.expandtab = true
 -- vim.opt.smartindent = true
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
+
+
+-- Normal mode mappings
+vim.keymap.set('n', 'd', '"_d', { noremap = true, silent = true })
+vim.keymap.set('n', 'D', '"_D', { noremap = true, silent = true })
+vim.keymap.set('n', 'x', '"_x', { noremap = true, silent = true })
+vim.keymap.set('n', 'X', '"_X', { noremap = true, silent = true })
+vim.keymap.set('n', 'c', '"_c', { noremap = true, silent = true })
+vim.keymap.set('n', 'C', '"_C', { noremap = true, silent = true })
+vim.keymap.set('n', 's', '"_s', { noremap = true, silent = true }) -- 's' for substitute character
+vim.keymap.set('n', 'S', '"_S', { noremap = true, silent = true }) -- 'S' for substitute line (though often mapped to cl by default)
+
+
+-- Visual mode mappings
+vim.keymap.set('x', 'd', '"_d', { noremap = true, silent = true })
+vim.keymap.set('x', 'D', '"_D', { noremap = true, silent = true }) -- Though 'D' in visual mode is not standard, mapping for consistency if used
+vim.keymap.set('x', 'x', '"_x', { noremap = true, silent = true })
+vim.keymap.set('x', 'X', '"_X', { noremap = true, silent = true }) -- Similar to 'D', 'X' in visual mode is not standard
+vim.keymap.set('x', 'c', '"_c', { noremap = true, silent = true })
+vim.keymap.set('x', 'C', '"_C', { noremap = true, silent = true }) -- Similar to 'D'
+vim.keymap.set('x', 's', '"_s', { noremap = true, silent = true })
+vim.keymap.set('x', 'S', '"_S', { noremap = true, silent = true }) -- Similar to 'D'
+
+print("Custom keymaps for black hole register loaded.") -- Optional: for confirmation
 -- Keybindings to cycle through buffers
 -- Map <Tab> to go to the next buffer
 vim.keymap.set('n', '<Tab>', ':bnext<CR>', { noremap = true, silent = true })
@@ -430,11 +454,10 @@ require('lazy').setup({
     "nvim-pack/nvim-spectre",
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
+      vim.keymap.set('n', '<leader>r', function()
       require("spectre").setup()
-
-      vim.keymap.set('n', '<leader>sr', function()
         require('spectre').open()
-      end, { desc = '[S]earch [R]eplace (Spectre)' })
+      end, { desc = '[R]eplace (Spectre)' })
     end,
   },
 
@@ -538,7 +561,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
-      vim.keymap.set('n', '<leader>sc', builtin.resume, { desc = '[S]earch [C]ontinue' })
+      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
@@ -1082,7 +1105,7 @@ require('lazy').setup({
   -- place them in the correct locations.
 
   -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
