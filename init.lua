@@ -747,6 +747,9 @@ require('lazy').setup({
       --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+      
+      -- Set position encoding to prevent warnings
+      capabilities.textDocument.positionEncoding = 'utf-16'
 
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -831,7 +834,8 @@ require('lazy').setup({
           end,
           jdtls = function()
             require("lspconfig").jdtls.setup({
-              on_attach = function()
+              capabilities = capabilities,
+              on_attach = function(client, bufnr)
                 client.server_capabilities.documentFormattingProvider = false
                 local bemol_dir = vim.fs.find({ ".bemol" }, { upward = true, type = "directory" })[1]
                 local ws_folders_lsp = {}
